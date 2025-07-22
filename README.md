@@ -1,75 +1,55 @@
-# Título do Projeto
+# Título do Projeto  
 
-Monitoramento de Ambiente
+Estação Meteorológica
 
 ## Objetivo Geral  
 
-O objetivo do projeto é monitorar um ambiente, permitindo a verificação da temperatura e da umidade em tempo real por um site na **WEB**. Além disso, possibilita o acionamento de um ar-condicionado de forma remota, caso o usuário considere necessário.
+O projeto tem como objetivo realizar o monitoramento remoto de parâmetros ambientais ( temperatura, umidade e pressão atmosférica ) por meio de um servidor web acessível via navegador. A estação permite a visualização em tempo real dos dados, o acompanhamento gráfico da variação dos parâmetros e a configuração dinâmica de limites operacionais, auxiliando na análise e tomada de decisões sem a necessidade de presença física no local.
 
-## Descrição Funcional  
-O projeto utiliza o módulo WiFi para a criação de servidor **WEB** capaz de mostrar um site **HTML** simples. Este site é responsável por mostrar de forma remota os dados lidos pelo sistema.
+## Descrição Funcional
 
-O sistema faz a leitura de dois sensores (simulados pelos **potenciômetros**), um de temperatura e outro de umidade, para verificar como está um determinado ambiente.
+O sistema funciona a partir da coleta de dados ambientais pelos sensores AHT10 e BMP280, integrados à placa BitDogLab com o microcontrolador RP2040. A leitura de temperatura é obtida pela média entre os dois sensores, enquanto umidade e pressão são capturadas individualmente. Os dados são processados e disponibilizados por um servidor web implementado com a biblioteca LWIPOPTS, que oferece quatro rotas principais:
 
-Não necessariamente precisa ser uma sala, quarto, cozinha, ou casa pessoal. Pode estar presente em uma sala de máquina, em um escritório ou outros ambientes que precisam de controle de temperatura e umidade.
+- `GET /` – retorna a interface HTML da página;
 
-Juntamente com os dados, o sistema pode ativar ou desativar um ar-condicionado ou outro dispositivo (fica a critério do usuário) que esteja na sala, de forma remota ao apertar um botão presente no site. Esse dispositivo, além de controlado pelo site, pode ser desativado ou ativado automaticamente caso os níveis de temperatura cheguem em um determinado limiar. No caso desse projeto, os limiares foram 0°C e 50°C.
+- `GET /data` – fornece os dados atuais de temperatura, umidade e pressão;
 
-O botão manipula um **LED** que informa se o dispositivo foi ativado/desativado. Para o sistema real, o pino ligado ao **LED** estará conectado a um relé capaz de fazer a ligação com o dispositivo de desejo ( seja ar-condicionado ou outro dispositivo).
+- `GET /config` – retorna os parâmetros de configuração (limites e offsets);
 
-> A seguir é possível observar a interface do site.
-> ![site](./assets/new-site.png)
-> Figura 1: Interface do sistema **WEB**.
+- `POST /config` – atualiza os parâmetros de configuração conforme input do usuário.
 
-Além das funcionalidades remotas que o projeto oferece, localmente o sistema utiliza uma interface para indicar que o sistema está funcionando, fazendo uso de um ***Display OLED***.
+A cada 2 segundos, os dados são atualizados via a rota /data e armazenados em uma janela de aproximadamente 10 minutos, permitindo a visualização de três gráficos dinâmicos (um para cada grandeza) e dos valores atuais. A interface também permite ao usuário ajustar os valores de máximo, mínimo e offset de cada grandeza diretamente pelo navegador.
 
-## Uso dos Periféricos da BitDogLab
+Localmente, na BitDogLab, são apresentadas duas telas para o usuário:
 
-Os periféricos utilizados para esse projeto foram: 2 **potenciômetros**, conectados ao ***joystick*** presente na placa; **LED RGB(cor azul)**; ***Display OLED***; e o módulo **WiFi**.
+- **Informações gerais** - essa tela é responsável por mostrar os dados de inicialização e de Wi-Fi, bem como o IP do dispositivo na rede
+- **Informações de sensores** - já essa tela é responsável apenas por indicar os valores lidos dos sensores.
 
-Os potenciômetros foram utilizados exclusivamente para simular os sensores de temperatura e umidade, podendo ser variados ao movimentar o ***joystick***. É interessante pontuar que o sensor de temperatura usado como base foi o **LM35** que tem 10mV/°C de resolução. Visto isto, foi adicionado um shift nos valores, para que a posição inicial do ***joystick*** apresente valores mais reais de temperatura.
+As telas podem ser alteradas através do botão A, que muda a visualização no display LCD.
 
-O **LED RGB(cor azul)** foi usado como alternativa para simular o dispositivo que será incorporado ao sistema, seja ele um ar-condicionado, ventilador ou outro, de acordo com a necessidade.
+Ainda localmente, é possível visualizar o modo de operação da estação, através do LED RGB, da Matriz de LEDS RGB e do Buzzer. Estes indicam se os limites mínimos ou máximos foram ultrapassados por algum parâmetro.
 
-Já o ***Display OLED*** foi utilizado para apresentar informações do sistema de forma local, para fins de depuração do sistema. Coisas como informações de conexão **WiFi**, criação do servidor e também recebimento de requisições.
+- Verde (LED + Matriz) e buzzer desligado indicam funcionamento normal.
 
-Por fim, o módulo **WiFi** foi utilizado para basicamente se conectar a uma rede local e subir um servidor **WEB** local capaz de receber requisições. A partir das requisições, é retornado um HTML, que gera a página **WEB**.
+- Vermelho (LED + Matriz) e buzzer ativado indicam que algum parâmetro excedeu os limites configurados.
 
-## Melhorias
+## BitDogLab e Código
 
-O projeto apresentou algumas melhorias com relação à versão anterior do ***webserver***, tanto com relação a *bugs*, quanto a novas funcionalidades e  aparência.
+Na BitDogLab, a lógica principal é executada por polling, exceto a mudança de telas, que é tratada por interrupção externa. Seguindo, foram utilizados os seguintes periféricos:
 
-A primeira mudança que pode ser notada é na aparência do site, como é mostrado na **figura 1**. Essa figura apresenta o site já com as modificações, tanto de cores e design, como também de informação, como pode ser visto no novo dado, o status do dispositivo.
+- **Matriz de LEDs RGB**: utilizada exclusivamente para um indicativo visual do estado da estação meteorológica.
+- **LED RGB**: Com o mesmo propósito da matriz, o **LED RGB** foi incorporado para indicar o estado de funcionamento.
+- **Buzzer**: Com o intuito de alertar caso os limites dos parâmetros medidos sejam ultrapassados, o **Buzzer** foi usado para emitir um sinal.
+- **Display LCD**: Apresenta informações importantes, além de possuir duas telas de dados que pode ser alterada usando um botão. Ele apresenta dados de WI-Fi, bem como dados capturados por sensores.
+- **Botão A**: botão utilizado para acionar a interrupção externa, capaz de alterar a exibição do **Display LCD**
+- **AHT10**: Sensor de temperatura e umidade que foi utilizado via comunicação **I2C**.
+- **BMP280**: Sensor de temperatura e pressão que foi utilizado via comunicação **I2C**.
+- **Módulo Wi-Fi**: utilizado exclusivamente para que fosse possível subir um **web-server** no **RP2040**.
 
-Além disso, um dos botões foram removidos, para que o controle do dispositivo fique mais dinâmico, ativando e desativando pelo mesmo botão.
+A BitDogLab trabalha com esses periféricos para que seja possível levar os dados obtidos localmente para a página do cliente, na **Web**, além também de indicar o estado do projeto com indicativos visuais e sonoros.
 
-Outros pontos de melhoria foram a correção de *bugs*. O site apresentava *bugs* de carregamento, que acarretavam muitas vezes em mau funcionamento da página, não carregando todas as informações. Esses *bugs* estavam acontecendo por conta de algumas configurações que estavam incorretas na biblioteca `lwipopts.h`. Acrescentando algumas linhas, como tamanho de ***buffer*** de recebimento e de envio, os *bugs* cessaram.
+Como foi dito, a lógica dos indicativos é totalmente feita em pooling, tendo verificações feitas com if para acionar ou não os periféricos necessários para indicar o estado do sistema naquele momento.
 
-Ainda com relação ao carregamento, foram adicionadas algumas rotas que retornavam apenas dados em ***json***, para fazer a alimentação do **HTML**, tirando a necessidade da página ser recarregada por completo para os dados carregarem continuamente. Essas rotas são: `/data` e `/device`.
-
-- `/data`: faz a captura dos dados por completo, retornando temperatura, umidade e o status do dispositivo.
-- `/device`: desativa/ativa o dispositivo e retorna o status dele (true para ativo e false para inativo)
-
-Essas rotas são chamadas usando a função `fetch`  do **javascript**.
-
-Por fim, foi adicionada uma melhoria no dispositivo localmente, fazendo com que ele verifique os níveis de temperatura para caso a temperatura chegue a valores limites (para esse projeto, 0°C no limite inferior e 50°C no limite superior), o dispositivo de controle térmico seja acionado ou desligado, a depender do limiar que foi atingido.
-
-## Observações de Uso
-
-Para utilização do projeto, faça a aquisição do código no repositório do ***GitHub***, e utilizando a extensão do Pico **SDK** crie o projeto a partir do ``CMakeLists.txt``.
-
-Foi adicionado um arquivo, `index.html`, contendo o **HTML** que é apresentado no ***webserver***. Caso queira visualizar, mude as **URLs** na tag `<script>` de acordo com o IP do seu ***Raspberry Pi Pico W*** e abra usando um navegador. O comportamento será o mesmo do site presente no ***webserver***.
-
-É necessário a criação de um arquivo na raiz, com nome de ``credenciais.h`` contendo as credenciais de **WiFi**  de sua rede local, da seguinte forma:
-
-````
-#define WIFI_SSID "NOME"
-#define WIFI_PASSWORD "SENHA"
-````
-
-Basta fazer essas configurações para ser possível fazer a execução do projeto localmente.
-
-## Links para acesso ao código e ao vídeo.  
-
-[Link do video ensaio (pt. 1)](https://youtu.be/tgz7Ovx1x6Q)
-[Link do video ensaio (pt. 2)](https://youtu.be/2DiaiYl-e5Q)
+Além disso, é utilizada a biblioteca LWIPOPTS para configurar e operar um **web-server** capaz de fazer todas as rotas e funcionalidades descritas neste documento.
+## Links para ao vídeo.
+Link vídeo ensaio:;
