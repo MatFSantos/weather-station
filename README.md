@@ -52,4 +52,4 @@ Como foi dito, a lógica dos indicativos é totalmente feita em pooling, tendo v
 
 Além disso, é utilizada a biblioteca LWIPOPTS para configurar e operar um **web-server** capaz de fazer todas as rotas e funcionalidades descritas neste documento.
 ## Links para ao vídeo.
-Link vídeo ensaio:;
+[Link vídeo ensaio](https://youtu.be/N9gr9qS_gQE)
