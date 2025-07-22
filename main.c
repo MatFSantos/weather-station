@@ -5,7 +5,6 @@
 
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
-#include "hardware/adc.h"
 #include "hardware/i2c.h"
 #include "hardware/clocks.h"
 #include "hardware/pwm.h"
@@ -27,8 +26,6 @@
 #include "credenciais.h"
 
 /** pin definitions */
-#define HUMIDITY_SENSOR 27            /* X axis */
-#define LM35 26                       /* Y axis */
 #define LED_PIN CYW43_WL_GPIO_LED_PIN /* LED of the rp pico w board */
 
 #define I2C0_PORT i2c0                 // i2c0 pinos 0 e 1, i2c1 pinos 2 e 3
@@ -179,11 +176,6 @@ int main() {
     stdio_init_all();
     init_gpio();
 
-    // init adc channels
-    adc_init();
-    adc_gpio_init(HUMIDITY_SENSOR);
-    adc_gpio_init(LM35);
-
     // get ws and ssd struct
     init_display();
     update_display("WEBSERVER", 18, true);
@@ -243,9 +235,6 @@ int main() {
     tcp_accept(server, tcp_server_accept);
     update_display("PORT 80", 28, false);
 
-    // Inicializa o conversor ADC
-    adc_init();
-    adc_set_temp_sensor_enabled(true);
 
     // Inicializa o I2C
     i2c_init(I2C0_PORT, 400 * 1000);
@@ -377,9 +366,6 @@ void user_request(char **request, char *buffer, size_t buffer_size) {
                 min_temp = (double) temp_min;
                 max_temp = (double) temp_max;
                 offset_temp = (double) temp_offset;
-                printf("==========================================================================");
-                printf("==========================================================================");
-                printf("%f", max_temp);
 
                 min_hum = (double)hum_min;
                 max_hum = (double) hum_max;
